@@ -147,7 +147,6 @@ class AVA_Dataset(Dataset):
     def pull_item(self, idx):
 
             video_clip = self.l_clip[idx].get_clip(start_sec=0.0, end_sec=1.0)["video"].permute(1,0,2,3)
-            print("video_clip dans pull_item shape is " ,video_clip.shape )
             video_clip=255-video_clip
             keyframe_info="self.l_clip[idx][-1]"
 
