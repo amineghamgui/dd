@@ -122,9 +122,7 @@ class AVA_Dataset(Dataset):
         self.l_boxes=[]
         for keys in annotation_factory:
             for keys1 in annotation_factory[keys]:
-                print(keys)
                 self.l_clip.append(video_factory[keys][keys1])
-                print(keys1)
                 self.l_boxes.append(annotation_factory[keys][keys1])
         video_factory = None
         annotation_factory=None
@@ -181,9 +179,6 @@ class AVA_Dataset(Dataset):
 
             # target: [N, 4 + C]
             target8 = np.concatenate([boxes, labels], axis=-1)
-            print( 'type taarget',type(target8))
-            
-            print("********************************target************************\n",target8)
             # transform
             
             l_clip, target = self.transform(video_clip, target8)
