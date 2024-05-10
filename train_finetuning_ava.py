@@ -25,8 +25,7 @@ from config import build_dataset_config, build_model_config
 from models.detector import build_model
 import torch.nn as nn
 
-from .dataset.pytorchvideo.transforms.transforms import UniformTemporalSubsample
-from .dataset.pytorchvideo.data.encoded_video import EncodedVideo
+
 
 
 GLOBAL_SEED = 42
