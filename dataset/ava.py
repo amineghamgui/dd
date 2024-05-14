@@ -26,10 +26,10 @@ class AVA_Dataset(Dataset):
         self.num_classes = 2          
         
         if is_train:
-            self.pathhhhh = os.path.join("/kaggle/input/train-csv-version1/train.csv")
+            self.pathhhhh = os.path.join("/data/train.csv")
             # self.exclusion_file = os.path.join("/kaggle/input/exclusion-version1/ava_train_excluded_timestamps_v2.2.csv")
         else:
-            self.pathhhhh = os.path.join("/kaggle/input/validationcsv-version1/val.csv")
+            self.pathhhhh = os.path.join("/data/val.csv")
             # self.exclusion_file = os.path.join("/kaggle/input/exclusion-version1/ava_train_excluded_timestamps_v2.2.csv")
 
         self.transform = transform
@@ -68,7 +68,7 @@ class AVA_Dataset(Dataset):
                 if key not in result_dict:
                     result_dict[key] = {}
 
-                path = "/kaggle/input/data-faux-train-yowo/data_faux/" + key + "/" + key1 + ".mp4"
+                path = "/data/data_faux/" + key + "/" + key1 + ".mp4"
                 result_dict[key][key1] = self.extract_frames(path)
 
         return result_dict
