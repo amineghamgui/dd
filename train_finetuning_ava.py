@@ -196,7 +196,7 @@ def train():
                       num_classes=num_classes, 
                       trainable=True,
                       resume=args.resume)
-    modelwithweight = load_weight(model=net, path_to_ckpt="/kaggle/input/yowoplusfps33-yowonano/yowo_nano_ava_v2.2_18.4.pth")
+    modelwithweight = load_weight(model=net, path_to_ckpt="/data/yowo_nano_ava_v2.2_18.4.pth")
     model = modelwithweight
   
     model = model.to(device).train()
