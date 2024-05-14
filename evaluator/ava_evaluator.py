@@ -37,7 +37,7 @@ class AVA_Evaluator(object):
         self.labelmap_file = os.path.join("labelmapfile.pbtxt")
             
         
-        self.gt_box_list = os.path.join("/kaggle/input/validationcsv-version1/val.csv")
+        self.gt_box_list = os.path.join("/data/val.csv")
 
         # load data
         self.excluded_keys = read_exclusions(self.exclusion_file)
