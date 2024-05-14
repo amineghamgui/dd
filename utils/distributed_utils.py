@@ -1,4 +1,4 @@
-# from github: https://github.com/ruinmessi/ASFF/blob/master/utils/distributed_util.py
+from github: https://github.com/ruinmessi/ASFF/blob/master/utils/distributed_util.py
 
 import torch
 import torch.distributed as dist
