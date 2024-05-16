@@ -152,7 +152,7 @@ dataset_config = {
         'optimizer': 'adamw',
         'momentum': 0.9,
         'weight_decay': 1e-4,
-        'max_epoch': 10,
+        'max_epoch': 30,
         'lr_epoch': [3, 4, 5, 6],
         'base_lr': 1e-4,
         'lr_decay_ratio': 0.5,
