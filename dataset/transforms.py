@@ -116,9 +116,6 @@ class Augmentation(object):
 
         pil_frames = []
 
-        uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
-        
-        video_clip = uniform_temporal_subsample(video_clip)
         
         for frame_tensor in video_clip:
             pil_frame = to_pil_image(frame_tensor)
@@ -160,6 +157,9 @@ class Augmentation(object):
         target = torch.as_tensor(target).float()
 
         
+        uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
+        
+        video_clip = uniform_temporal_subsample(video_clip_to_tensor)
         return video_clip, target 
 
 
@@ -178,9 +178,7 @@ class BaseTransform(object):
 
         pil_frames = []
 
-        uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
-        video_clip = uniform_temporal_subsample(video_clip)
-        
+
         for frame_tensor in video_clip:
             pil_frame = to_pil_image(frame_tensor)
             pil_frame = pil_frame.convert('RGB')
@@ -210,5 +208,8 @@ class BaseTransform(object):
         target = torch.as_tensor(target).float()
         video_clip=torch.stack(video_clip, dim=1)
 
+        uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
+        video_clip = uniform_temporal_subsample(video_clip)
+        
         
         return video_clip, target 
