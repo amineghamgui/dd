@@ -115,7 +115,11 @@ class Augmentation(object):
     def __call__(self, video_clip, target):
 
         pil_frames = []
-       
+
+        uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
+        
+        video_clip = uniform_temporal_subsample(video_clip_to_tensor)
+        
         for frame_tensor in video_clip:
             pil_frame = to_pil_image(frame_tensor)
             pil_frame = pil_frame.convert('RGB')
@@ -139,7 +143,7 @@ class Augmentation(object):
             video_clip = [img.transpose(Image.FLIP_LEFT_RIGHT) for img in video_clip]
 
         # distort
-        video_clip = self.random_distort_image(video_clip)
+        #video_clip = self.random_distort_image(video_clip)
 
         # process target
         if target is not None:
@@ -154,9 +158,7 @@ class Augmentation(object):
         video_clip=None 
         video_clip_to_tensor=torch.stack(video_clip_to_tensor, dim=1)
         target = torch.as_tensor(target).float()
-        uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
-        
-        video_clip = uniform_temporal_subsample(video_clip_to_tensor)
+
         
         return video_clip, target 
 
@@ -175,7 +177,10 @@ class BaseTransform(object):
     def __call__(self, video_clip, target=None, normalize=True):
 
         pil_frames = []
-       
+
+        uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
+        video_clip = uniform_temporal_subsample(video_clip)
+        
         for frame_tensor in video_clip:
             pil_frame = to_pil_image(frame_tensor)
             pil_frame = pil_frame.convert('RGB')
@@ -204,8 +209,6 @@ class BaseTransform(object):
         video_clip = self.to_tensor(video_clip)
         target = torch.as_tensor(target).float()
         video_clip=torch.stack(video_clip, dim=1)
-        uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
-        
-        video_clip = uniform_temporal_subsample(video_clip)
+
         
         return video_clip, target 
