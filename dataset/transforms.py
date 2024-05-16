@@ -204,5 +204,8 @@ class BaseTransform(object):
         video_clip = self.to_tensor(video_clip)
         target = torch.as_tensor(target).float()
         video_clip=torch.stack(video_clip, dim=1)
+        uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
+        
+        video_clip = uniform_temporal_subsample(video_clip)
         
         return video_clip, target 
