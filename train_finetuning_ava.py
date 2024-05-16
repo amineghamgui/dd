@@ -151,7 +151,7 @@ def train():
         # Track hyperparameters and run metadata
         config={
             
-            "epochs": 10,
+            "epochs": 30,
         },
     )
     # dist
