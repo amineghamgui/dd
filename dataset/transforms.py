@@ -118,7 +118,7 @@ class Augmentation(object):
 
         uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
         
-        video_clip = uniform_temporal_subsample(video_clip_to_tensor)
+        video_clip = uniform_temporal_subsample(video_clip)
         
         for frame_tensor in video_clip:
             pil_frame = to_pil_image(frame_tensor)
