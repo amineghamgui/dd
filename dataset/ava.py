@@ -26,10 +26,10 @@ class AVA_Dataset(Dataset):
         self.num_classes = 2          
         
         if is_train:
-            self.pathhhhh = os.path.join("/home/ubuntu/train.csv")
+            self.pathhhhh = os.path.join("/kaggle/input/train-csv-version1/train.csv")
             # self.exclusion_file = os.path.join("/kaggle/input/exclusion-version1/ava_train_excluded_timestamps_v2.2.csv")
         else:
-            self.pathhhhh = os.path.join("/home/ubuntu/val.csv")
+            self.pathhhhh = os.path.join("/kaggle/input/validationcsv-version1/val.csv")
             # self.exclusion_file = os.path.join("/kaggle/input/exclusion-version1/ava_train_excluded_timestamps_v2.2.csv")
 
         self.transform = transform
