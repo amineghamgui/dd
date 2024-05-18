@@ -68,7 +68,7 @@ class AVA_Dataset(Dataset):
                 if key not in result_dict:
                     result_dict[key] = {}
 
-                path = "/home/ubuntu/data_stage_shoplifting/" + key + "/" + key1 + ".mp4"
+                path = "/kaggle/input/data-faux-train-yowo/data_faux/" + key + "/" + key1 + ".mp4"
                 result_dict[key][key1] = self.extract_frames(path)
 
         return result_dict
