@@ -142,6 +142,7 @@ class AVA_Evaluator(object):
 
     def calculate_mAP(self, epoch):
         eval_start = time.time()
+        print("self.all_preds[i]***************************************************",self.all_preds[i])
         detections = self.get_ava_eval_data()
         if self.full_ava_test:
             groundtruth = self.full_groundtruth
