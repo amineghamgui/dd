@@ -6,9 +6,6 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 
-from pytorchvideo.transforms.transforms import UniformTemporalSubsample
-from pytorchvideo.data.encoded_video import EncodedVideo
-
 
 
 
@@ -120,10 +117,12 @@ class AVA_Dataset(Dataset):
         annotation_factory=self.combiner_valeurs()
         self.l_clip=[]
         self.l_boxes=[]
+        self.l_name=[]
         for keys in annotation_factory:
             for keys1 in annotation_factory[keys]:
                 self.l_clip.append(video_factory[keys][keys1])
                 self.l_boxes.append(annotation_factory[keys][keys1])
+                self.l_name.append([keys,keys1])
         video_factory = None
         annotation_factory=None
          
@@ -186,8 +185,8 @@ class AVA_Dataset(Dataset):
                 'boxes': target[:, :4].float(),  # [N, 4]
                 'labels': target[:, 4:].long(),  # [N, C]
                 'orig_size': [ow, oh],
-                'video_idx': "aaaaaa",
-                'sec': idx,
+                'video_idx': self.l_name[idx][0],
+                'sec': self.l_name[idx][1],
 
             }
 
