@@ -164,30 +164,70 @@ class Augmentation(object):
 
 
 # Transform for Testing
+# class BaseTransform(object):
+#     def __init__(self, img_size=224, pixel_mean=[0., 0., 0.], pixel_std=[1., 1., 1.]):
+#         self.img_size = img_size
+#         self.pixel_mean = pixel_mean
+#         self.pixel_std = pixel_std
+    
+#     def to_tensor(self, video_clip):
+#         return [F.normalize(F.to_tensor(image), self.pixel_mean, self.pixel_std) for image in video_clip]
+
+
+#     def __call__(self, video_clip, target=None, normalize=True):
+
+#         pil_frames = []
+
+
+#         for frame_tensor in video_clip:
+#             pil_frame = to_pil_image(frame_tensor)
+#             pil_frame = pil_frame.convert('RGB')
+#             pil_frames.append(pil_frame)
+
+#         video_clip=pil_frames
+#         pil_frames=None
+
+        
+#         oh = video_clip[0].height
+#         ow = video_clip[0].width
+
+#         # resize
+#         video_clip = [img.resize([self.img_size, self.img_size]) for img in video_clip]
+
+#         # normalize target
+#         if target is not None:
+#             if normalize:
+#                 target[..., [0, 2]] /= ow
+#                 target[..., [1, 3]] /= oh
+
+#         else:
+#             target = np.array([])
+
+#         # to tensor
+#         video_clip = self.to_tensor(video_clip)
+#         target = torch.as_tensor(target).float()
+#         video_clip=torch.stack(video_clip, dim=1)
+
+#         uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
+#         video_clip = uniform_temporal_subsample(video_clip)
+        
+        
+#         return video_clip, target 
+
+
+
+
 class BaseTransform(object):
     def __init__(self, img_size=224, pixel_mean=[0., 0., 0.], pixel_std=[1., 1., 1.]):
         self.img_size = img_size
         self.pixel_mean = pixel_mean
         self.pixel_std = pixel_std
-    
+
     def to_tensor(self, video_clip):
         return [F.normalize(F.to_tensor(image), self.pixel_mean, self.pixel_std) for image in video_clip]
 
 
     def __call__(self, video_clip, target=None, normalize=True):
-
-        pil_frames = []
-
-
-        for frame_tensor in video_clip:
-            pil_frame = to_pil_image(frame_tensor)
-            pil_frame = pil_frame.convert('RGB')
-            pil_frames.append(pil_frame)
-
-        video_clip=pil_frames
-        pil_frames=None
-
-        
         oh = video_clip[0].height
         ow = video_clip[0].width
 
@@ -206,10 +246,5 @@ class BaseTransform(object):
         # to tensor
         video_clip = self.to_tensor(video_clip)
         target = torch.as_tensor(target).float()
-        video_clip=torch.stack(video_clip, dim=1)
 
-        uniform_temporal_subsample = UniformTemporalSubsample(num_samples=16)
-        video_clip = uniform_temporal_subsample(video_clip)
-        
-        
         return video_clip, target 
