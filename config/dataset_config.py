@@ -140,7 +140,7 @@ dataset_config = {
         # post process
         'conf_thresh': 0.3,
         'nms_thresh': 0.5,
-        'conf_thresh_val': 0.1,
+        'conf_thresh_val': 0.2,
         'nms_thresh_val': 0.5,
         # freeze backbone
         'freeze_backbone_2d': False,
