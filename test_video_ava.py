@@ -47,77 +47,76 @@ def parse_args():
 
 @torch.no_grad()
 def run(args, d_cfg, model, device, transform, class_names):
-    # path to save 
+    # path to save
     save_path = os.path.join(args.save_folder, 'ava_video')
     os.makedirs(save_path, exist_ok=True)
     
     # path to video
     path_to_video = os.path.join(d_cfg['data_root'], 'videos_15min', args.video)
     
-    gif = imageio.get_reader(path_to_video, 'gif')
-    
-            # Obtient le nombre total de frames dans le GIF
-    num_frames = len(gif)
-    # video
+    # Open the video file
     video = cv2.VideoCapture(path_to_video)
-    fourcc = cv2.VideoWriter_fourcc(*'FMP4')
+    # Get video properties
+    #fps = video.get(cv2.CAP_PROP_FPS)
+    fps=30
+    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    save_size = (640, 480)
-    save_name = os.path.join(save_path, 'detection.gif')  # Change extension to .gif
-    fps = 15.0
-    
-    # Create a list to store frames for gif creation
-    gif_frames = []
-    video_clip = []
+    # Define output video parameters
+    save_name = os.path.join(save_path, 'detection.mp4')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video_writer = cv2.VideoWriter(save_name, fourcc, fps, (width, height))
+
+    # Create dictionaries to store scores for each class
+    d = {}
+    #d1 = {}
+
+    # Initialize variables for performance metrics
     iteration_times = []
-    time_global=[]
-    d=dict()
-    #d1=dict()
+    time_global = []
     start_ram = psutil.virtual_memory().used
-    while(True):
+    video_clip=[]
+    # Loop through each frame in the video
+    while True:
         iteration_start_time = time.time()
 
         ret, frame = video.read()
-        i = 0
 
         if ret:
-            # to PIL image
-            frame_pil = Image.fromarray(frame.astype(np.uint8))
+            # Convert frame to PIL image
+            frame_pil = Image.fromarray(frame)
 
-            # prepare
+            # Prepare video clip
             if len(video_clip) <= 0:
-                for _ in range(d_cfg['len_clip']):
-                    video_clip.append(frame_pil)
+                video_clip.extend([frame_pil] * d_cfg['len_clip'])
 
             video_clip.append(frame_pil)
             del video_clip[0]
 
-            # orig size
+            # Original size
             orig_h, orig_w = frame.shape[:2]
 
-            # transform
+            # Transform
             x, _ = transform(video_clip)
-            # List [T, 3, H, W] -> [3, T, H, W]
             x = torch.stack(x, dim=1)
             x = x.unsqueeze(0).to(device)  # [B, 3, T, H, W], B=1
-            print("************************************************************shape********************************",x.shape)
+
+            # Inference
             t0 = time.time()
-            # inference
             batch_bboxes = model(x)
             inference_time = time.time() - t0
             time_global.append(inference_time)
-            print("inference time ", inference_time, "s")
 
-            # batch size = 1
+            # Batch size = 1
             bboxes = batch_bboxes[0]
 
-            # visualize detection results
+            # Visualize detection results
             for bbox in bboxes:
                 x1, y1, x2, y2 = bbox[:4]
                 det_conf = float(bbox[4])
                 cls_out = [det_conf * cls_conf for cls_conf in bbox[5:]]
 
-                # rescale bbox
+                # Rescale bbox
                 x1, x2 = int(x1 * orig_w), int(x2 * orig_w)
                 y1, y2 = int(y1 * orig_h), int(y2 * orig_h)
 
@@ -126,7 +125,7 @@ def run(args, d_cfg, model, device, transform, class_names):
                 scores = cls_scores[indices]
                 indices = list(indices[0])
                 scores = list(scores)
-                #print("*****************************************************",indices)
+
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
                 if len(scores) > 0:
@@ -137,14 +136,12 @@ def run(args, d_cfg, model, device, transform, class_names):
                     text_size = []
 
                     for _, cls_ind in enumerate(indices):
-                        #d1[str(class_names[cls_ind])]=scores[_]
-                        #print("#####################",_,cls_ind)
                         text.append("[{:.2f}] ".format(scores[_]) + str(class_names[cls_ind]))
-                        if((str(class_names[cls_ind]) not in  d)):
-                          d[str(class_names[cls_ind])]=scores[_]
-                        if ((str(class_names[cls_ind]) in d)and(scores[_]>d[str(class_names[cls_ind])])  ):
-                          d[str(class_names[cls_ind])]=scores[_]
-                        
+                        if str(class_names[cls_ind]) not in d:
+                            d[str(class_names[cls_ind])] = scores[_]
+                        elif scores[_] > d[str(class_names[cls_ind])]:
+                            d[str(class_names[cls_ind])] = scores[_]
+
                         text_size.append(cv2.getTextSize(text[-1], font, fontScale=0.25, thickness=1)[0])
                         coord.append((x1 + 3, y1 + 7 + 10 * _))
                         cv2.rectangle(blk, (coord[-1][0] - 1, coord[-1][1] - 6),
@@ -154,44 +151,206 @@ def run(args, d_cfg, model, device, transform, class_names):
                     for t in range(len(text)):
                         cv2.putText(frame, text[t], coord[t], font, 0.25, (0, 0, 0), 1)
 
-            # Save the frame to the list
-            gif_frames.append(frame)
+
 
             iteration_end_time = time.time()
             iteration_time = iteration_end_time - iteration_start_time
             iteration_times.append(iteration_time)
-
-            # Save the frame as an image (optional)
-            #cv2.imwrite("/content/PyTorch_YOWO/img/output_image{0}.jpg".format(i), frame)
-
+            cv2.putText(frame,
+              f'FPS : {1/iteration_time}',
+              (20, 20),
+              cv2.FONT_HERSHEY_SIMPLEX,
+              1,
+              (255, 255, 255),
+              2,
+              cv2.LINE_AA)
+                        # Write frame to output video
+            video_writer.write(frame)
         else:
             break
 
+    # Release video writer object
+    video_writer.release()
     # Release the video capture
-    time.sleep(3)
-    end_ram = psutil.virtual_memory().used
     video.release()
 
     # Calculate and print average fps
     average_iteration_time = sum(iteration_times) / len(iteration_times)
     average_fps = 1 / average_iteration_time
     print(f'Average FPS: {average_fps:.2f}')
-    #print(d)
-    # Trier le dictionnaire par valeurs de manière décroissante
+
+    # Sort the dictionary by values in descending order
     sorted_items = sorted(d.items(), key=lambda x: x[1], reverse=True)
-    # Afficher les 5 premières clés avec les valeurs les plus élevées
+    # Display the top 5 keys with the highest values
     top_5_keys = [key for key, value in sorted_items[:5]]
-    print("Les 5 clés avec les valeurs les plus élevées sont :", top_5_keys)
+    print("Top 5 keys with the highest values:", top_5_keys)
+
+    # Print performance metrics
+    end_ram = psutil.virtual_memory().used
+    print('RAM used:', end_ram - start_ram)
+    print("FPS for model only:", len(time_global) / sum(time_global))
+    # print("Number of frames:", num_frames)
+    print("Number of iterations:", len(iteration_times))
+
+
+
+# def run(args, d_cfg, model, device, transform, class_names):
+#     # path to save 
+#     save_path = os.path.join(args.save_folder, 'ava_video')
+#     os.makedirs(save_path, exist_ok=True)
+    
+#     # path to video
+#     path_to_video = os.path.join(d_cfg['data_root'], 'videos_15min', args.video)
+    
+#     # gif = imageio.get_reader(path_to_video, 'gif')
+#     gif = imageio.get_reader(path_to_video)
+#             # Obtient le nombre total de frames dans le GIF
+#     num_frames = len(gif)
+#     # video
+#     video = cv2.VideoCapture(path_to_video)
+#     fourcc= cv2.VideoWriter_fourcc(*'mp4v')
+#     # fourcc = cv2.VideoWriter_fourcc(*'FMP4')
+
+
 
     
-    # Save the frames as a gif using imageio
-    imageio.mimsave(save_name, gif_frames, duration=1/fps)
+#     #save_name = os.path.join(save_path, 'detection.mp4')  # Change extension to .mp4
+    
 
-    print(f'Gif saved at: {save_name}')
-    print("num frame",num_frames)
-    print("num iteration",len(iteration_times))
-    print('ram used',end_ram-start_ram)
-    print("fps pour modele seulement" ,len(time_global)/sum(time_global))
+
+
+
+    
+#     save_size = (640, 480)
+#     save_name = os.path.join(save_path, 'detection.mp4')  # Change extension to .gif
+#     fps = 25.0
+    
+#     # Create a list to store frames for gif creation
+#     gif_frames = []
+#     video_clip = []
+#     iteration_times = []
+#     time_global=[]
+#     d=dict()
+#     #d1=dict()
+#     start_ram = psutil.virtual_memory().used
+#     while(True):
+#         iteration_start_time = time.time()
+
+#         ret, frame = video.read()
+#         i = 0
+
+#         if ret:
+#             # to PIL image
+#             frame_pil = Image.fromarray(frame.astype(np.uint8))
+
+#             # prepare
+#             if len(video_clip) <= 0:
+#                 for _ in range(d_cfg['len_clip']):
+#                     video_clip.append(frame_pil)
+
+#             video_clip.append(frame_pil)
+#             del video_clip[0]
+
+#             # orig size
+#             orig_h, orig_w = frame.shape[:2]
+
+#             # transform
+#             x, _ = transform(video_clip)
+#             # List [T, 3, H, W] -> [3, T, H, W]
+#             x = torch.stack(x, dim=1)
+#             x = x.unsqueeze(0).to(device)  # [B, 3, T, H, W], B=1
+#             print("************************************************************shape********************************",x.shape)
+#             t0 = time.time()
+#             # inference
+#             batch_bboxes = model(x)
+#             inference_time = time.time() - t0
+#             time_global.append(inference_time)
+#             print("inference time ", inference_time, "s")
+
+#             # batch size = 1
+#             bboxes = batch_bboxes[0]
+
+#             # visualize detection results
+#             for bbox in bboxes:
+#                 x1, y1, x2, y2 = bbox[:4]
+#                 det_conf = float(bbox[4])
+#                 cls_out = [det_conf * cls_conf for cls_conf in bbox[5:]]
+
+#                 # rescale bbox
+#                 x1, x2 = int(x1 * orig_w), int(x2 * orig_w)
+#                 y1, y2 = int(y1 * orig_h), int(y2 * orig_h)
+
+#                 cls_scores = np.array(cls_out)
+#                 indices = np.where(cls_scores > 0.4)
+#                 scores = cls_scores[indices]
+#                 indices = list(indices[0])
+#                 scores = list(scores)
+#                 #print("*****************************************************",indices)
+#                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+#                 if len(scores) > 0:
+#                     blk = np.zeros(frame.shape, np.uint8)
+#                     font = cv2.FONT_HERSHEY_SIMPLEX
+#                     coord = []
+#                     text = []
+#                     text_size = []
+
+#                     for _, cls_ind in enumerate(indices):
+#                         #d1[str(class_names[cls_ind])]=scores[_]
+#                         #print("#####################",_,cls_ind)
+#                         text.append("[{:.2f}] ".format(scores[_]) + str(class_names[cls_ind]))
+#                         if((str(class_names[cls_ind]) not in  d)):
+#                           d[str(class_names[cls_ind])]=scores[_]
+#                         if ((str(class_names[cls_ind]) in d)and(scores[_]>d[str(class_names[cls_ind])])  ):
+#                           d[str(class_names[cls_ind])]=scores[_]
+                        
+#                         text_size.append(cv2.getTextSize(text[-1], font, fontScale=0.25, thickness=1)[0])
+#                         coord.append((x1 + 3, y1 + 7 + 10 * _))
+#                         cv2.rectangle(blk, (coord[-1][0] - 1, coord[-1][1] - 6),
+#                                       (coord[-1][0] + text_size[-1][0] + 1, coord[-1][1] + text_size[-1][1] - 4),
+#                                       (0, 255, 0), cv2.FILLED)
+#                     frame = cv2.addWeighted(frame, 1.0, blk, 0.25, 1)
+#                     for t in range(len(text)):
+#                         cv2.putText(frame, text[t], coord[t], font, 0.25, (0, 0, 0), 1)
+
+#             # Save the frame to the list
+#             gif_frames.append(frame)
+
+#             iteration_end_time = time.time()
+#             iteration_time = iteration_end_time - iteration_start_time
+#             iteration_times.append(iteration_time)
+
+#             # Save the frame as an image (optional)
+#             #cv2.imwrite("/content/PyTorch_YOWO/img/output_image{0}.jpg".format(i), frame)
+
+#         else:
+#             break
+
+#     # Release the video capture
+#     time.sleep(3)
+#     end_ram = psutil.virtual_memory().used
+#     video.release()
+
+#     # Calculate and print average fps
+#     average_iteration_time = sum(iteration_times) / len(iteration_times)
+#     average_fps = 1 / average_iteration_time
+#     print(f'Average FPS: {average_fps:.2f}')
+#     #print(d)
+#     # Trier le dictionnaire par valeurs de manière décroissante
+#     sorted_items = sorted(d.items(), key=lambda x: x[1], reverse=True)
+#     # Afficher les 5 premières clés avec les valeurs les plus élevées
+#     top_5_keys = [key for key, value in sorted_items[:5]]
+#     print("Les 5 clés avec les valeurs les plus élevées sont :", top_5_keys)
+
+    
+#     # Save the frames as a gif using imageio
+#     imageio.mimsave(save_name, gif_frames, duration=1/fps)
+
+#     print(f'Gif saved at: {save_name}')
+#     print("num frame",num_frames)
+#     print("num iteration",len(iteration_times))
+#     print('ram used',end_ram-start_ram)
+#     print("fps pour modele seulement" ,len(time_global)/sum(time_global))
     
 
 
@@ -209,7 +368,7 @@ if __name__ == '__main__':
     m_cfg = build_model_config(args)
 
     class_names = d_cfg['label_map']
-    num_classes = 2
+    num_classes = 80
 
     # transform
     basetransform = BaseTransform(
@@ -229,11 +388,11 @@ if __name__ == '__main__':
         )
 
     # load trained weight
-    model = load_weight(model=model, path_to_ckpt=args.weight)
-    save_model_path = os.path.join("/kaggle/working/", 'model1111.pth')
+    # model = load_weight(model=model, path_to_ckpt=args.weight)
+    # save_model_path = os.path.join("/kaggle/working/", 'model1111.pth')
 
     # Enregistrez le modèle
-    torch.save(model, save_model_path)
+    # torch.save(model, save_model_path)
     # to eval
     model = model.to(device).eval()
     #import torch
