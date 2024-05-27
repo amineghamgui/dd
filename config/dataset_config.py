@@ -138,7 +138,7 @@ dataset_config = {
         # cls label
         'multi_hot': True,  # multi hot
         # post process
-        'conf_thresh': 0.3,
+        'conf_thresh': 0.2,
         'nms_thresh': 0.5,
         'conf_thresh_val': 0.1,
         'nms_thresh_val': 0.5,
