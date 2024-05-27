@@ -388,7 +388,7 @@ if __name__ == '__main__':
         )
 
     # load trained weight
-    # model = load_weight(model=model, path_to_ckpt=args.weight)
+    model = load_weight(model=model, path_to_ckpt=args.weight)
     # save_model_path = os.path.join("/kaggle/working/", 'model1111.pth')
 
     # Enregistrez le modèle
