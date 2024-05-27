@@ -121,7 +121,7 @@ def run(args, d_cfg, model, device, transform, class_names):
                 y1, y2 = int(y1 * orig_h), int(y2 * orig_h)
 
                 cls_scores = np.array(cls_out)
-                indices = np.where(cls_scores > 0.1)
+                indices = np.where(cls_scores > 0.15)
                 scores = cls_scores[indices]
                 indices = list(indices[0])
                 scores = list(scores)
